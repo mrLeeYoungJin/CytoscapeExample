@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+	<head>
+    	<meta charset=utf-8 />
+    	<meta name="viewport" content="user-scalable=no, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, minimal-ui">
+    	<title>Cola.js/Cytoscape.js</title>
+    
+    	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
+    	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+	    <link href="http://cdnjs.cloudflare.com/ajax/libs/qtip2/2.2.0/jquery.qtip.min.css" rel="stylesheet" type="text/css" />
+	    <link href="/style/style.css" rel="stylesheet" />
+
+		<script src="/js/cytoscape/cytoscape.min.js"></script>
+    
+    	<script src="https://cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.min.js"></script>
+    	<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/3.10.0/lodash.min.js"></script>
+    	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.0/jquery.min.js"></script>
+    	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    	<script src="http://marvl.infotech.monash.edu/webcola/cola.v3.min.js"></script>
+    	<script src="http://cdnjs.cloudflare.com/ajax/libs/qtip2/2.2.0/jquery.qtip.min.js"></script>
+	    <script src="https://cdn.rawgit.com/cytoscape/cytoscape.js-qtip/2.2.5/cytoscape-qtip.js"></script>
+	    <script src="https://cdn.rawgit.com/cytoscape/cytoscape.js-cola/1.1.1/cytoscape-cola.js"></script>
+	    <script src="https://cdn.rawgit.com/cpettitt/dagre/v0.7.4/dist/dagre.min.js"></script>
+		<script src="https://cdn.rawgit.com/cytoscape/cytoscape.js-dagre/1.1.2/cytoscape-dagre.js"></script>
+		<script src="https://cdn.rawgit.com/cytoscape/cytoscape.js-spread/1.0.9/cytoscape-spread.js"></script>
+	    <script src="https://cdn.rawgit.com/cytoscape/cytoscape.js-cose-bilkent/1.0.5/cytoscape-cose-bilkent.js"></script>
+	    <script src="/js/base.js"></script>
+	    <script src="/data/data.js"></script>
+  	</head>
+  	<!--<body class="config-closed">-->
+  	<body class="">
+    	<div id="cy"></div>
+    		<span class="fa fa-bars config-toggle" id="config-toggle"></span>
+    		<div id="config" class="config">
+      			<div class="preamble">
+      				<div class="container" style="padding-left: 0px;width: 16em;">
+      					<div class="btn-group btn-group-sm" style="padding-bottom: 10px">
+						    <button type="button" class="btn btn-info" id="nodeAdd">Node Add</button>
+						    <button type="button" class="btn btn-info" id="nodeDel">Node Del</button>
+						    <button type="button" class="btn btn-info" id="EdgeAdd">Edge Add</button>
+						    <button type="button" class="btn btn-info" id="EdgeDel">Edge Del</button>
+						</div>
+						<div class="btn-group btn-group-sm">
+						    <button type="button" class="btn btn-info" id="upFeeder">Up Feeder</button>
+						    <button type="button" class="btn btn-info" id="downFeeder">Down Feeder</button>
+						    <button type="button" class="btn btn-info" id="upDownFeeder">UpDown Feeder</button>
+						</div>
+						
+						<h2>Node Info</h2>
+						<form style="font-size: 15px">
+						    <div class="form-group">
+								<label for="DeviceOriginId">Device Id</label>
+						      	<input type="text" class="form-control input-sm" id="DeviceOriginId" placeholder="Enter Device Id">
+						    </div>
+						    <div class="form-group">
+						      	<label for="Status">Status</label>
+						      	<input type="text" class="form-control input-sm" id="Status" placeholder="Enter Status">
+						    </div>
+						    <div class="form-group">
+						      	<label for="Type">Type</label>
+						      	<input type="text" class="form-control input-sm" id="Type" placeholder="Enter Type">
+						    </div>
+						    <div class="form-group">
+						      	<label for="EquipType">Equip Type</label>
+						      	<input type="text" class="form-control input-sm" id="EquipType" placeholder="Enter Equip Type">
+						    </div>
+						    <div class="form-group">
+						      	<label for="BaseVoltVal">Base Voltage</label>
+						      	<input type="text" class="form-control input-sm" id="BaseVoltVal" placeholder="Enter Base Voltage">
+						    </div>
+						    <div class="form-group">
+						      	<label for="BaseVoltVal">Current Voltage</label>
+						      	<input type="text" class="form-control input-sm" id="CurVoltVal" readonly="readonly">
+						    </div>
+						</form>
+		      		</div>
+		      	</div>
+    		</div>
+  </body>
+</html>
