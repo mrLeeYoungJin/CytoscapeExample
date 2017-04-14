@@ -5,7 +5,7 @@ var app = express();
 
 app.use('/', express.static('src'));
 
-app.listen(3000, 'localhost', (err) => {
+app.listen(3001, 'localhost', (err) => {
   if (err) {
     console.log(err);
     return;

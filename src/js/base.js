@@ -3,19 +3,76 @@ class Enum {
 	    this.DeviceCtrl = {DeviceAdd:0, DeviceDel:1, EdgeAdd:2, EdgeDel:3, None:-1}
 	}
 	
-	getDeviceCtrl() {
+	static DeviceCtrl() {
 		return this.DeviceCtrl;
 	}
 }
 
-var ctrlType = new Enum().getDeviceCtrl();
-  
+var ctrlType = new Enum().DeviceCtrl;
+
+const TopoClass =(() => {
+	let defaultNodeClass = {
+		'shape': 'data(faveShape)',
+		'width': '60px',
+        'height': '60px',
+        'content': 'data(deviceOriginId)',
+        'border-width': 5,
+        'border-color': '#61bffc',
+        "text-valign":"center",
+        "text-halign":"center",
+        "background-color":"#555",
+        "text-outline-color":"#555",
+        "text-outline-width":"2px",
+        "color":"#fff",
+        "overlay-padding":"6px",
+        "z-index":"10"
+	}
+	
+	let defaultEdgeClass = {
+	    'width': 4,
+        'target-arrow-shape': 'triangle',
+        'opacity': 0.5,
+        'curve-style': 'bezier'
+    }
+	
+	let defaultSelectClass = {
+        'background-color': 'red',
+        'line-color': 'red',
+        'target-arrow-color': 'red',
+        'source-arrow-color': 'red',
+        'opacity': 1
+    }
+	
+	class TopoClass {
+		constructor(_nodeClass, _edgeClass, _selectClass) {
+			let nodeClass = _nodeClass || defaultNodeClass; 
+			let edgeClass = _edgeClass || defaultEdgeClass;
+			let selectClass = _selectClass || defaultSelectClass;
+			
+			this.getNodeClass = function() {return nodeClass;}
+			this.setNodeClass = function(value){nodeClass = value;}
+			
+			this.getEdgeClass = function() {return edgeClass;}
+			this.setEdgeClass = function(value){edgeClass = value;}
+			
+			this.getSelectClass = function() {return selectClass;}
+			this.setSelectClass = function(value){selectClass = value;}
+		}
+	}
+	return TopoClass;
+})();
+
 function GraphObj() {
 	let thisGraph = this;
 	
+	let layoutOption = "preset";
 	let selTempSourceDevice = null;
 	let nSelDataFunc = -1;	// 0:Device add, 1:Device del, 2:edge add, 3:edge del
 	let newDeviceIdx = 1;
+	
+	thisGraph.getLayoutOption = function() {
+		return layoutOption;
+	};
 	
 	thisGraph.setNSelDataFunc = function(nSelDataFunc2) {
 		nSelDataFunc = nSelDataFunc2;
@@ -29,8 +86,8 @@ function GraphObj() {
 		return selTempSourceDevice;
 	};
 	
-	var deviceInfoInIt = function(device) {
-		$("#DeviceOriginId").val(device.DeviceOriginId);
+	thisGraph.deviceInfoInIt = function(device) {
+		$("#DeviceOriginId").val(device.deviceOriginId);
 		//$("#DeviceId").val(null);
 		$("#Status").val(null);
 		$("#Type").val(null);
@@ -42,7 +99,7 @@ function GraphObj() {
 		var evtTarget = null;
 		
 		if(event != null) {
-			evtTarget = event.target._private;
+			evtTarget = event.target;
 		}
 		
 		switch(evtNum) {
@@ -50,12 +107,13 @@ function GraphObj() {
 				let addDevice = {
 		    		  group: "nodes",
 		    		  data: addDeviceData(),
-		    		  position: { x: event.position.x, y: event.position.y }
+		    		  position: { x: event.position.x, y: event.position.y },
+					  style : {"background-color":"gray",}
 		    	}
 				cy.add(addDevice);
 				
 				cy.$("#"+addDevice.data.id).select();
-				deviceInfoInIt(addDevice.data);
+				this.deviceInfoInIt(addDevice.data);
 		    	nSelDataFunc = ctrlType.None;
 		        break;
 		    case 1: // Device del
@@ -67,12 +125,13 @@ function GraphObj() {
 		        break;
 		    case 2:	// edge add
 		    	if(selTempSourceDevice != null && selTempSourceDevice.target !== cy) {
-		    		let device = selTempSourceDevice.target._private.data;
-		    		if(device.id != evtTarget.data.id) {
+		    		let device = selTempSourceDevice.target.data();
+		    		if(device.id != evtTarget.data().id) {
 			    		let linkCheck = false;
 			    		cy.edges().forEach(function(l) {
-	                		if((l._private.data.source === device.id && l._private.data.target === evtTarget.data.id)
-	                				|| (l._private.data.source === evtTarget.data.id && l._private.data.target === device.id)) {
+			    			let lData = l.data();
+	                		if((lData.source === device.id && lData.target === evtTarget.data().id)
+	                				|| (l.data().source === evtTarget.data().id && lData.target === device.id)) {
 	                			linkCheck = true;
 	                			return;
 	                		}
@@ -82,7 +141,7 @@ function GraphObj() {
 			    		
 			    		cy.add({
 				    		  group: "edges",
-				    		  data: {source: device.id, target:evtTarget.data.id}
+				    		  data: {source: device.id, target:evtTarget.data().id, nId:'newEdge'}
 				    	});
 			    		selTempSourceDevice = null;
 			    	}
@@ -104,6 +163,12 @@ function GraphObj() {
 		        break;
 		}
 		
+		//console.log("=======dataElements :", cy.elements().jsons());
+		//console.log("=======dataElements1 :", cy.nodes().jsons());
+		console.log("=======dataElements1 :", cy.nodes("[nId = 'newNode']").jsons());
+		//alert(JSON.stringify(cy.nodes("[nId = 'newNode']").jsons()));
+		
+
 		$('html,body').css('cursor', 'default');
 	};
 	
@@ -111,13 +176,13 @@ function GraphObj() {
 		let feeders = selTempSourceDevice.target;
 		if(feeders.length > 1) return;
 		
-		let feederDevice = feeders[0]._private;
-		if(feederDevice.group === "edges") return;
+		let feederDevice = feeders[0];
+		if(feederDevice.group() === "edges") return;
 		
-		let data = cy.edges("[target=\""+feederDevice.data.id+"\"]")[0];
+		let data = cy.edges("[target=\""+feederDevice.data().id+"\"]")[0];
 		
 		data.select();
-		cy.$("#"+data._private.data.source).select();
+		cy.$("#"+data.data().source).select();
 		data.ancestors().forEach(function(n){
 			cy.$("#"+n.data('source')).select();
 			n.select();
@@ -145,29 +210,42 @@ function GraphObj() {
 		}
 	}
 	
+	thisGraph.layOutPresetSet = function(nodes) {
+		let posX = 600;
+		let posY = 80;
+		nodes.forEach(function(n){
+			//console.log("n : ", n);
+			n.position({
+				  x: posX*n.data().level,
+				  y: posY*n.data().row
+			});
+		});	
+	}
+	
 	thisGraph.downFeederCheck = function() {
 		let feeders = selTempSourceDevice.target;
 		if(feeders.length > 1) return;
 		
-		let feederDevice = feeders[0]._private;  
-		if(feederDevice.group === "edges") return;
+		let feederDevice = feeders[0];  
+		if(feederDevice.group() === "edges") return;
 		
-		downDeviceCheck(cy.edges("[source=\""+feederDevice.data.id+"\"]"));
+		downDeviceCheck(cy.edges("[source=\""+feederDevice.data().id+"\"]"));
 	};
 	
 	var downDeviceCheck = function(device) {
 		device.forEach(function(n) {
 			n.select();
 			cy.$("#"+n.data('target')).select();
-			downDeviceCheck(cy.edges("[source=\""+n._private.data.target+"\"]"));
+			downDeviceCheck(cy.edges("[source=\""+n.data().target+"\"]"));
 		});
 	};
 	
 	var addDeviceData = function() {
 		let device = {
         		id:"newDevice"+newDeviceIdx, 
-        		DeviceOriginId:"newLabel"+newDeviceIdx,
-        		faveShape: "ellipse"
+        		deviceOriginId:"newLabel"+newDeviceIdx,
+        		faveShape: "ellipse",
+        		nId:'newNode'
         }
 		
 		newDeviceIdx++;
@@ -177,93 +255,25 @@ function GraphObj() {
 
 $(function(){ // on dom ready
 	var graphObj = new GraphObj();
-	
-	var options = {
-			name: 'grid',
-			  fit: true, // whether to fit the viewport to the graph
-			  padding: 30, // padding used on fit
-			  boundingBox: undefined, // constrain layout bounds; { x1, y1, x2, y2 } or { x1, y1, w, h }
-			  avoidOverlap: true, // prevents node overlap, may overflow boundingBox if not enough space
-			  avoidOverlapPadding: 10, // extra spacing around nodes when avoidOverlap: true
-			  condense: false, // uses all available space on false, uses minimal space on true
-			  rows: undefined, // force num of rows in the grid
-			  cols: 10, // force num of columns in the grid
-			  position: function(node){
-				  return {row:node._private.data.row+1, col:node._private.data.level+1};
-				  
-			  }, // returns { row, col } for element
-			  sort: undefined, // a sorting function to order the nodes; e.g. function(a, b){ return a.data('weight') - b.data('weight') }
-			  animate: false, // whether to transition the node positions
-			  animationDuration: 500, // duration of animation in ms if enabled
-			  animationEasing: undefined, // easing of animation if enabled
-			  ready: undefined, // callback on layoutready
-			  stop: undefined // callback on layoutstop
-			};
-	
-	/*var options = {
-			name: 'dagre',
-			// dagre algo options, uses default value on undefined
-			  nodeSep: undefined, // the separation between adjacent nodes in the same rank
-			  edgeSep: undefined, // the separation between adjacent edges in the same rank
-			  rankSep: undefined, // the separation between adjacent nodes in the same rank
-			  rankDir: 'LR', // 'TB' for top to bottom flow, 'LR' for left to right
-			  minLen: function( edge ){ return 1; }, // number of ranks to keep between the source and target of the edge
-			  edgeWeight: function( edge ){ return 1; }, // higher weight edges are generally made shorter and straighter than lower weight edges
-
-			  // general layout options
-			  fit: true, // whether to fit to viewport
-			  padding: 30, // fit padding
-			  animate: false, // whether to transition the node positions
-			  animationDuration: 500, // duration of animation in ms if enabled
-			  animationEasing: undefined, // easing of animation if enabled
-			  boundingBox: undefined, // constrain layout bounds; { x1, y1, x2, y2 } or { x1, y1, w, h }
-			  ready: function(){}, // on layoutready
-			  stop: function(){} // on layoutstop
-	}*/
-	
+	var topoOption = new TopoOptions(graphObj.getLayoutOption());
+	const topoClass = new TopoClass();
 	
 	var cy = cytoscape({
-		container: document.getElementById('cy'),
-		pan: { x: 0, y: 0 },
+		container: document.getElementById('cy')
+		, pan: { x: 0, y: 0 }
 
 		// interaction options:
-		minZoom: 0.1,
-		maxZoom: 3,
-		userZoomingEnabled: true,
+		, minZoom: 0.1
+		, maxZoom: 3
+		, userZoomingEnabled: true
 	
-		style: cytoscape.stylesheet()
+		, style: cytoscape.stylesheet()
 			.selector('node')
-			.css({
-				'shape': 'data(faveShape)',
-				'width': '60px',
-		        'height': '60px',
-		        'content': 'data(deviceOriginId)',
-		        'border-width': 5,
-		        'border-color': '#61bffc',
-		        "text-valign":"center",
-		        "text-halign":"center",
-		        "background-color":"#555",
-		        "text-outline-color":"#555",
-		        "text-outline-width":"2px",
-		        "color":"#fff",
-		        "overlay-padding":"6px",
-		        "z-index":"10"
-			})
+			.css(topoClass.getNodeClass())
 		    .selector('edge')
-		    .css({
-		        'width': 4,
-		        'target-arrow-shape': 'triangle',
-		        'opacity': 0.5,
-		        'curve-style': 'bezier'
-		    })
+		    .css(topoClass.getEdgeClass())
 		    .selector(':selected')
-		    .css({
-		        'background-color': 'red',
-		        'line-color': 'red',
-		        'target-arrow-color': 'red',
-		        'source-arrow-color': 'red',
-		        'opacity': 1
-		    })
+		    .css(topoClass.getSelectClass())
 		    .selector('.faded')
 		    .css({
 		        'opacity': 0.25,
@@ -271,39 +281,22 @@ $(function(){ // on dom ready
 		}),
 		  
 		elements: dataElements,
-		  
-		/*layout: {
-			name: 'breadthfirst',
-			directed: true,
-			avoidOverlap: true,
-			padding: 5,
-			spacingFactor : 1.75
-		},*/
 		
-		/*layout: {
-			name: 'preset',
-
-			  positions: undefined, // map of (node id) => (position obj); or function(node){ return somPos; }
-			  zoom: undefined, // the zoom level to set (prob want fit = false if set)
-			  pan: undefined, // the pan level to set (prob want fit = false if set)
-			  fit: true, // whether to fit to viewport
-			  padding: 130, // padding on fit
-			  animate: false, // whether to transition the node positions
-			  animationDuration: 500, // duration of animation in ms if enabled
-			  animationEasing: undefined, // easing of animation if enabled
-			  ready: undefined, // callback on layoutready
-			  stop: undefined // callback on layoutstop
-		},*/
+		layout: {
+		    name: 'preset'
+		},
 		  
 		ready: function(){
 			window.cy = this;
 		}
 	});
-	 
-	cy.zoom({
-		level: 0.1, // the zoom level
-		renderedPosition: { x: 0, y: 0 }
-	});
+	
+	//dataElements.nodes.find(checkAdult);
+	
+	/*cy.zoom({
+		level: 2.1 // the zoom level
+		//, renderedPosition: { x: 0, y: 0 }
+	});*/
 	
 	$("#nodeAdd").click(function() {
 		graphObj.topoMenu(ctrlType.DeviceAdd);
@@ -322,18 +315,13 @@ $(function(){ // on dom ready
 		var evtTarget = event.target;
 		  
 		if( evtTarget === cy ){
-			//console.log('tap on background : ', evtTarget);
+			console.log('tap on background : ', evtTarget);
 			cy.$(':selected').unselect();
 			if(graphObj.getNSelDataFunc() != 0) graphObj.setNSelDataFunc(-1);
 		} else {
-			//console.log('tap on some element : ', evtTarget);
-			if(evtTarget._private.group === "nodes") {
-				$("#DeviceOriginId").val(evtTarget._private.data.deviceOriginId);
-				//$("#DeviceId").val(evtTarget._private.data.id);
-				$("#Status").val(evtTarget._private.data.statusCd);
-				$("#Type").val(evtTarget._private.data.typeCd);
-				$("#EquipType").val(evtTarget._private.data.equipCd);
-				$("#BaseVoltVal").val(evtTarget._private.data.baseVoltVal);
+			console.log('tap on some element : ', evtTarget);
+			if(evtTarget.group() === "nodes") {
+				graphObj.deviceInfoInIt(evtTarget.data())
 			}
 		}
 		  
@@ -352,6 +340,9 @@ $(function(){ // on dom ready
 		graphObj.upFeederCheck();
 		graphObj.downFeederCheck();
 	});
+	
+	graphObj.layOutPresetSet(cy.nodes());
+	
 	
 	 /*cy.nodes().forEach(function(n){
 		    var g = n.data('name');
@@ -381,11 +372,28 @@ $(function(){ // on dom ready
 		  });*/
 	 
 
+	let mpc = -1;
 	cy.on('mouseover', 'node', function (evt) {
+		mpc = -1
         $('html,body').css('cursor', 'pointer');
     });
-	cy.on('mouseout ', 'node', function (evt) {
+	cy.on('mouseout', 'node', function (evt) {
+		mpc = -1
         $('html,body').css('cursor', 'default');
+    });
+	
+	cy.on('mousedown', 'node', function (evt) {
+		mpc = 0;
+    });
+	
+	cy.on('mousemove ', 'node', function (evt) {
+		if(mpc === 0) mpc = 1;
+    });
+	
+	cy.on('mouseup', 'node', function (evt) {
+		if(mpc === 1) alert(evt.target.data().deviceOriginId);
+		
+		mpc = -1;
     });
 	
 	$('#config-toggle').on('click', function(){
@@ -393,7 +401,14 @@ $(function(){ // on dom ready
 		cy.resize();
 	});
 	
-	cy.layout( options ).run();
+	cy.nodes().forEach(function(n, i){
+		//console.log("i : ", i);
+		if(cy.nodes().length-1 === i) {
+			n.style('background-color', 'blue')
+		}
+	});	
+	
+	cy.layout(topoOption.getOption()).run();
 }); // on dom ready
 
 $(function() {

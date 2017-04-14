@@ -92,3 +92,12 @@ a:hover {
     right: 0;
   }
 }
+
+div select#Type  {
+	color:gray;
+    font-size: 13px;
+}
+div select#Type2  {
+	color:gray;
+    font-size: 13px;
+}

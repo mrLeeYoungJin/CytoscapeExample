@@ -16,7 +16,8 @@ var dataElements = {
 			      "level" : 0,
 			      "row" : 0,
 			      "faveShape" : "triangle"
-			    }
+			    },
+			    "position" : {x:100, y:100}
 			  }, {
 			    "data" : {
 			      "id" : 6,
