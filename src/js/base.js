@@ -2,7 +2,7 @@ class Enum {
 	constructor() {
 	    this.DeviceCtrl = {DeviceAdd:0, DeviceDel:1, EdgeAdd:2, EdgeDel:3, None:-1}
 	}
-	
+
 	static DeviceCtrl() {
 		return this.DeviceCtrl;
 	}
@@ -15,26 +15,27 @@ const TopoClass =(() => {
 		'shape': 'data(faveShape)',
 		'width': '60px',
         'height': '60px',
-        'content': 'data(deviceOriginId)',
+        'content': 'data(deviceId)',
         'border-width': 5,
-        'border-color': '#61bffc',
-        "text-valign":"center",
+        //'border-color': '#61bffc',
+        "text-valign":"top",
         "text-halign":"center",
-        "background-color":"#555",
+        "background-color":"black",
         "text-outline-color":"#555",
-        "text-outline-width":"2px",
-        "color":"#fff",
+        "text-outline-width":"1px",
+				"font-size": "30px",
+        "color":"black",
         "overlay-padding":"6px",
         "z-index":"10"
 	}
-	
+
 	let defaultEdgeClass = {
 	    'width': 4,
         'target-arrow-shape': 'triangle',
         'opacity': 0.5,
         'curve-style': 'bezier'
     }
-	
+
 	let defaultSelectClass = {
         'background-color': 'red',
         'line-color': 'red',
@@ -42,19 +43,19 @@ const TopoClass =(() => {
         'source-arrow-color': 'red',
         'opacity': 1
     }
-	
+
 	class TopoClass {
 		constructor(_nodeClass, _edgeClass, _selectClass) {
-			let nodeClass = _nodeClass || defaultNodeClass; 
+			let nodeClass = _nodeClass || defaultNodeClass;
 			let edgeClass = _edgeClass || defaultEdgeClass;
 			let selectClass = _selectClass || defaultSelectClass;
-			
+
 			this.getNodeClass = function() {return nodeClass;}
 			this.setNodeClass = function(value){nodeClass = value;}
-			
+
 			this.getEdgeClass = function() {return edgeClass;}
 			this.setEdgeClass = function(value){edgeClass = value;}
-			
+
 			this.getSelectClass = function() {return selectClass;}
 			this.setSelectClass = function(value){selectClass = value;}
 		}
@@ -64,44 +65,44 @@ const TopoClass =(() => {
 
 function GraphObj() {
 	let thisGraph = this;
-	
-	let layoutOption = "preset";
+
+	let layoutOption = "dagre";
 	let selTempSourceDevice = null;
 	let nSelDataFunc = -1;	// 0:Device add, 1:Device del, 2:edge add, 3:edge del
 	let newDeviceIdx = 1;
-	
+
 	thisGraph.getLayoutOption = function() {
 		return layoutOption;
 	};
-	
+
 	thisGraph.setNSelDataFunc = function(nSelDataFunc2) {
 		nSelDataFunc = nSelDataFunc2;
 	};
-	
+
 	thisGraph.getNSelDataFunc = function() {
 		return nSelDataFunc;
 	};
-	
+
 	thisGraph.getSelTempSourceDevice = function() {
 		return selTempSourceDevice;
 	};
-	
+
 	thisGraph.deviceInfoInIt = function(device) {
-		$("#DeviceOriginId").val(device.deviceOriginId);
+		$("#DeviceOriginId").val(device.deviceId);
 		//$("#DeviceId").val(null);
-		$("#Status").val(null);
+		$("#Status").val('status');
 		$("#Type").val(null);
 		$("#EquipType").val(null);
-		$("#BaseVoltVal").val(null);
+		$("#BaseVoltVal").val(device.baseVoltage);
 	}
-	
+
 	thisGraph.dataSelFunc = function(evtNum, event) {
 		var evtTarget = null;
-		
+
 		if(event != null) {
 			evtTarget = event.target;
 		}
-		
+
 		switch(evtNum) {
 			case 0:	// Device add
 				let addDevice = {
@@ -111,7 +112,7 @@ function GraphObj() {
 					  style : {"background-color":"gray",}
 		    	}
 				cy.add(addDevice);
-				
+
 				cy.$("#"+addDevice.data.id).select();
 				this.deviceInfoInIt(addDevice.data);
 		    	nSelDataFunc = ctrlType.None;
@@ -136,9 +137,9 @@ function GraphObj() {
 	                			return;
 	                		}
 	                	});
-	                	
+
 	                	if(linkCheck) return;
-			    		
+
 			    		cy.add({
 				    		  group: "edges",
 				    		  data: {source: device.id, target:evtTarget.data().id, nId:'newEdge'}
@@ -152,7 +153,7 @@ function GraphObj() {
 		        break;
 		    case 3: // edge del
 		    	if(selTempSourceDevice != null) {
-		    		if(selTempSourceDevice.target.isEdge()) selTempSourceDevice.target.remove();	
+		    		if(selTempSourceDevice.target.isEdge()) selTempSourceDevice.target.remove();
 		    	}
 		    	selTempSourceDevice = null;
 		    	nSelDataFunc = ctrlType.None;
@@ -162,25 +163,24 @@ function GraphObj() {
 		    	nSelDataFunc = ctrlType.None;
 		        break;
 		}
-		
+
 		//console.log("=======dataElements :", cy.elements().jsons());
 		//console.log("=======dataElements1 :", cy.nodes().jsons());
-		console.log("=======dataElements1 :", cy.nodes("[nId = 'newNode']").jsons());
+		//console.log("=======dataElements1 :", cy.nodes("[nId = 'newNode']").jsons());
 		//alert(JSON.stringify(cy.nodes("[nId = 'newNode']").jsons()));
-		
 
 		$('html,body').css('cursor', 'default');
 	};
-	
+
 	thisGraph.upFeederCheck = function() {
 		let feeders = selTempSourceDevice.target;
 		if(feeders.length > 1) return;
-		
+
 		let feederDevice = feeders[0];
 		if(feederDevice.group() === "edges") return;
-		
+
 		let data = cy.edges("[target=\""+feederDevice.data().id+"\"]")[0];
-		
+
 		data.select();
 		cy.$("#"+data.data().source).select();
 		data.ancestors().forEach(function(n){
@@ -188,7 +188,7 @@ function GraphObj() {
 			n.select();
 		});
 	};
-	
+
 	thisGraph.topoMenu = function(num) {
 		switch (num) {
 		case ctrlType.DeviceAdd:
@@ -209,7 +209,7 @@ function GraphObj() {
 			break;
 		}
 	}
-	
+
 	thisGraph.layOutPresetSet = function(nodes) {
 		let posX = 600;
 		let posY = 80;
@@ -219,19 +219,19 @@ function GraphObj() {
 				  x: posX*n.data().level,
 				  y: posY*n.data().row
 			});
-		});	
+		});
 	}
-	
+
 	thisGraph.downFeederCheck = function() {
 		let feeders = selTempSourceDevice.target;
 		if(feeders.length > 1) return;
-		
-		let feederDevice = feeders[0];  
+
+		let feederDevice = feeders[0];
 		if(feederDevice.group() === "edges") return;
-		
+
 		downDeviceCheck(cy.edges("[source=\""+feederDevice.data().id+"\"]"));
 	};
-	
+
 	var downDeviceCheck = function(device) {
 		device.forEach(function(n) {
 			n.select();
@@ -239,15 +239,15 @@ function GraphObj() {
 			downDeviceCheck(cy.edges("[source=\""+n.data().target+"\"]"));
 		});
 	};
-	
+
 	var addDeviceData = function() {
 		let device = {
-        		id:"newDevice"+newDeviceIdx, 
+        		id:"newDevice"+newDeviceIdx,
         		deviceOriginId:"newLabel"+newDeviceIdx,
         		faveShape: "ellipse",
         		nId:'newNode'
         }
-		
+
 		newDeviceIdx++;
 		return device;
 	};
@@ -257,7 +257,7 @@ $(function(){ // on dom ready
 	var graphObj = new GraphObj();
 	var topoOption = new TopoOptions(graphObj.getLayoutOption());
 	const topoClass = new TopoClass();
-	
+
 	var cy = cytoscape({
 		container: document.getElementById('cy')
 		, pan: { x: 0, y: 0 }
@@ -266,7 +266,7 @@ $(function(){ // on dom ready
 		, minZoom: 0.1
 		, maxZoom: 3
 		, userZoomingEnabled: true
-	
+
 		, style: cytoscape.stylesheet()
 			.selector('node')
 			.css(topoClass.getNodeClass())
@@ -279,25 +279,29 @@ $(function(){ // on dom ready
 		        'opacity': 0.25,
 		        'text-opacity': 0
 		}),
-		  
+
 		elements: dataElements,
-		
+
 		layout: {
 		    name: 'preset'
 		},
-		  
+
 		ready: function(){
 			window.cy = this;
 		}
 	});
-	
+
+	cy.navigator({
+						// options...
+					});
+
 	//dataElements.nodes.find(checkAdult);
-	
+
 	/*cy.zoom({
 		level: 2.1 // the zoom level
 		//, renderedPosition: { x: 0, y: 0 }
 	});*/
-	
+
 	$("#nodeAdd").click(function() {
 		graphObj.topoMenu(ctrlType.DeviceAdd);
 	});
@@ -310,10 +314,10 @@ $(function(){ // on dom ready
 	$("#EdgeDel").click(function() {
 		graphObj.topoMenu(ctrlType.EdgeDel);
 	});
-	 
+
 	cy.on('tap', function(event) {
 		var evtTarget = event.target;
-		  
+
 		if( evtTarget === cy ){
 			console.log('tap on background : ', evtTarget);
 			cy.$(':selected').unselect();
@@ -324,26 +328,26 @@ $(function(){ // on dom ready
 				graphObj.deviceInfoInIt(evtTarget.data())
 			}
 		}
-		  
+
 		graphObj.dataSelFunc(graphObj.getNSelDataFunc(), event);
 	});
-	
+
 	$("#upFeeder").click(function() {
 		graphObj.upFeederCheck();
 	});
-	
+
 	$("#downFeeder").click(function() {
 		graphObj.downFeederCheck();
 	});
-	
+
 	$("#upDownFeeder").click(function() {
 		graphObj.upFeederCheck();
 		graphObj.downFeederCheck();
 	});
-	
+
 	graphObj.layOutPresetSet(cy.nodes());
-	
-	
+
+
 	 /*cy.nodes().forEach(function(n){
 		    var g = n.data('name');
 
@@ -370,7 +374,7 @@ $(function(){ // on dom ready
 		      }
 		    });
 		  });*/
-	 
+
 
 	let mpc = -1;
 	cy.on('mouseover', 'node', function (evt) {
@@ -381,34 +385,51 @@ $(function(){ // on dom ready
 		mpc = -1
         $('html,body').css('cursor', 'default');
     });
-	
+
 	cy.on('mousedown', 'node', function (evt) {
 		mpc = 0;
     });
-	
+
 	cy.on('mousemove ', 'node', function (evt) {
 		if(mpc === 0) mpc = 1;
     });
-	
+
 	cy.on('mouseup', 'node', function (evt) {
-		if(mpc === 1) alert(evt.target.data().deviceOriginId);
-		
+		//if(mpc === 1) alert(evt.target.data().deviceOriginId);
+
 		mpc = -1;
     });
-	
+
 	$('#config-toggle').on('click', function(){
 		$('body').toggleClass('config-closed');
 		cy.resize();
 	});
-	
-	cy.nodes().forEach(function(n, i){
-		//console.log("i : ", i);
-		if(cy.nodes().length-1 === i) {
-			n.style('background-color', 'blue')
-		}
-	});	
-	
-	cy.layout(topoOption.getOption()).run();
+
+	// 특정 노드 상태 변경
+	// cy.nodes().forEach(function(n, i){
+	// 	//console.log("i : ", i);
+	// 	if(cy.nodes().length-1 === i) {
+	// 		n.style('background-color', 'blue')
+	// 	}
+	// });
+
+	var layout = cy.layout(topoOption.getOption());
+
+	var defaults = {
+    container: false // can be a HTML or jQuery element or jQuery selector
+  , viewLiveFramerate: 0 // set false to update graph pan only on drag end; set 0 to do it instantly; set a number (frames per second) to update not more than N times per second
+  , thumbnailEventFramerate: 30 // max thumbnail's updates per second triggered by graph updates
+  , thumbnailLiveFramerate: false // max thumbnail's updates per second. Set false to disable
+  , dblClickDelay: 200 // milliseconds
+  , removeCustomContainer: true // destroy the container specified by user on plugin destroy
+  , rerenderDelay: 100 // ms to throttle rerender updates to the panzoom for performance
+};
+
+console.log(cy)
+
+//var nav = cy.Navigator( defaults ); // get navigator instance, nav
+
+	layout.run();
 }); // on dom ready
 
 $(function() {

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+	<head>
+    <meta charset=utf-8 />
+    <meta name="viewport" content="user-scalable=no, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, minimal-ui">
+    <title>SMP Pattern</title>
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+
+</head>
+<body>
+
+<div id="container2" style="min-width: 310px; height: 500px; margin: 0 auto">222</div>
+<div id="container" style="min-width: 310px; height: 500px; margin: 0 auto"></div>
+
+<script>
+
+function seasonText(seasonNo) {
+  let season = "여름철";
+
+  if(seasonNo == 0) {
+    season = '여름철';
+  } else if(seasonNo == 1) {
+    season = '봄/가을철';
+  } else if(seasonNo == 2) {
+    season = '겨울철';
+  }
+
+  return season;
+}
+
+var customSeries = [];
+
+var datas = <%- JSON.stringify(datas) %>
+
+var datasOne = datas[0];
+var season = seasonText(datasOne.season);
+
+var customPlotBands = []
+var datasOneSmpVals = datasOne.smpVals.split(',');
+
+datasOneSmpVals.forEach(function(smp, index) {
+  let smpData = smp.split('|');
+  let loadType = smpData[1];
+  let plotBand = {};
+
+  plotBand.from = index-1;
+  plotBand.to = index;
+
+  if (loadType == 'Low') {
+    plotBand.color = '#FCFFC5';
+  } else if(loadType == 'Middle') {
+    plotBand.color = '#A0C7FD';
+  } else if(loadType == 'High') {
+    plotBand.color = '#F69696';
+
+  }
+  customPlotBands.push(plotBand);
+});
+
+datas.forEach(function(data) {
+  let smpVals = data.smpVals.split(',');
+  let seriesData = [];
+
+  smpVals.forEach(function(smp) {
+    let smpData = smp.split('|');
+
+    let smpSeries = {}
+    smpSeries.time = smpData[0];
+    smpSeries.loadType = smpData[1];
+    smpSeries.temperature = smpData[2];
+    smpSeries.y = parseFloat(smpData[3]);
+
+    seriesData.push(smpSeries);
+  });
+
+
+  var series = {
+    name: data.smpDate.substring(6,8)+'일('+data.dayTitle+')',
+    lineWidth: 1,
+    data: seriesData
+  }
+
+  customSeries.push(series);
+});
+
+//console.log(JSON.stringify(customSeries))
+
+Highcharts.chart('container', {
+    chart: {
+    		zoomType: 'x',
+        type: 'spline'
+    },
+    title: {
+        text: 'SMP Pattern'
+    },
+    subtitle: {
+        text: datasOne.smpDate.substring(0,4) + '년 ' + datasOne.smpDate.substring(4,6) + '월(' + season + '), 기온정보:서울'
+    },
+    xAxis: {
+        categories: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24],
+        //tickmarkPlacement: 'on',
+        title: {
+        	text: 'Time',
+          enabled: true
+        },
+        plotBands: customPlotBands,
+    },
+    yAxis: {
+      labels: {
+        format: '{value}'+'원'
+      },
+      title: {
+        //text: 'Value'
+        enabled: false
+      },
+        min: 0
+    },
+    tooltip: {
+        formatter: function () {
+            let s = '';
+            let smpValArr = [];
+            let temperatureValArr = [];
+            $.each(this.points, function (i, data) {
+                let point = data.point;
+                smpValArr.push(point.y);
+                temperatureValArr.push(point.options.temperature);
+            });
+
+            let minSmpVal = Math.min(...smpValArr);
+            let maxSmpVal = Math.max(...smpValArr);
+            let minTemperatureVal = Math.min(...temperatureValArr);
+            let maxTemperatureVal = Math.max(...temperatureValArr);
+            $.each(this.points, function (i, data) {
+                let point = data.point;
+
+                //console.log(minSmpVal, maxSmpVal,  point.y);
+
+                if (minSmpVal == point.y) {
+                  s += '<b style=\"color:blue;font-weight: bold;\">' + this.series.name + ':' + point.y + ' 원</b>';
+                } else if (maxSmpVal == point.y) {
+                  s += '<b style=\"color:red;font-weight: bold;\">' + this.series.name + ': ' + point.y + ' 원</b>';
+                } else {
+                  s += this.series.name + ': <b>' + point.y + ' 원</b>';
+                }
+
+                //s += ', 부하: <b>' + point.options.loadType + '</b>';
+
+                if (minTemperatureVal == point.options.temperature) {
+                  s += ', <b style=\"color:blue;font-weight: bold;\">기온: ' + point.options.temperature + '</b> <br />';
+                } else if (maxTemperatureVal == point.options.temperature) {
+                  s += ', <b style=\"color:red;font-weight: bold;\">기온: ' + point.options.temperature + '</b> <br />';
+                } else {
+                  s += ', 기온: <b>' + point.options.temperature + '</b> <br />';
+                }
+            });
+
+            return s;
+        },
+        // headerFormat: '',
+        // pointFormat: '{series.name}: <b>{point.y}</b>, 부하: <b>{point.loadType}</b>, 기온: <b>{point.temperature}</b> <br/>',
+        shared: true
+    },
+    plotOptions: {
+        spline: {
+            lineWidth: 1,
+            marker: {
+                enabled: false
+            }
+        }
+    },
+    series:customSeries
+});
+</script>
+<script src="/js/charts/dr-temperature-chart.js"></script>
+
+</body>
+</html>

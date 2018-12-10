@@ -12,13 +12,15 @@
   "author": "lyjguy",
   "license": "MIT",
   "devDependencies": {
-  	"http-proxy-middleware": "^0.13.0",
+    "http-proxy-middleware": "^0.13.0",
     "webpack": "^1.12.14",
     "webpack-dev-middleware": "^1.6.1",
     "webpack-hot-middleware": "^2.10.0"
   },
   "dependencies": {
-  	"express": "^4.13.4",
-  	"cytoscape": "^2.7.16"
+    "cytoscape": "^2.7.16",
+    "ejs": "^2.5.7",
+    "express": "^4.16.2",
+    "mysql": "^2.15.0"
   }
 }

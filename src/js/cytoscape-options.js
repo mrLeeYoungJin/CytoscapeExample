@@ -4,7 +4,7 @@ class TopoOptions {
 	constructor(name) {
 	    this.name = name;
 	}
-	
+
 	getOption() {
 		if(this.name === "grid") {
 			return gridOptions;
@@ -49,7 +49,7 @@ var dagreOptions = {
 	edgeSep: undefined, // the separation between adjacent edges in the same rank
 	rankSep: undefined, // the separation between adjacent nodes in the same rank
 	rankDir: 'LR', // 'TB' for top to bottom flow, 'LR' for left to right
-	minLen: function( edge ){ return 1; }, // number of ranks to keep between the source and target of the edge
+	minLen: function( edge ){ return 10; }, // number of ranks to keep between the source and target of the edge
 	edgeWeight: function( edge ){ return 1; }, // higher weight edges are generally made shorter and straighter than lower weight edges
 
 	// general layout options
